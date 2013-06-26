@@ -52,7 +52,6 @@
     $('.dropZone').text("Come on then…")
 
   onFileDrop = (event) ->
-    console.log("onFileDrop: ",event);
     event.stopPropagation()
     event.preventDefault()
     files = event.originalEvent.dataTransfer.files # FileList object.
@@ -79,6 +78,8 @@
         properties._attachments[name] =
           content_type: mimeType,
           data: event.target.result.substr(13 + mimeType.length)
+
+        localStorage.setItem 'currentImage', event.target.result
 
         hoodie.store.add('image', properties).done (image) ->
           window.location = window.location.href + "stack/"+ image.id
@@ -184,6 +185,13 @@
       $('#messageBody').show().focus()
 
   showImage = (id) ->
+    localImage = localStorage.getItem("currentImage");
+    if localImage
+      img = '<img src="'+localImage+'" />';
+      $imageContainer.append(img).data('id',id)
+      localStorage.removeItem("currentImage");
+      return
+
     # Get the image itself
     hoodie.store.find("image", id).done (image) ->
       imgSrc = hoodie.baseUrl + "/user%2F" + image.createdBy + "/image%2F" + image.id + "/" + image.name
