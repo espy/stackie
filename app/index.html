@@ -84,6 +84,9 @@
               </div>
             </div>
           </div>
+          <div class="stackList">
+
+          </div>
         <a href="/stack/l1mr45f">Test</a>
         </div>
 
@@ -107,6 +110,29 @@
           <div class="point" style="left:{{x}}px;top:{{y}}px;" data-id="{{id}}">
             <i class="icon-map-marker icon-white"></i>
           </div>
+        </script>
+
+        <script id="stackItem" class="partial" type="text/html">
+          <li class="group" data-id="{{id}}">
+            <a href="/stack/{{id}}">
+              <img src="{{baseUrl}}/user%2F{{createdBy}}/image%2F{{id}}/{{name}}" alt="">
+              <ul class="stackAttributes">
+                <li class="pointAmount">{{pointAmount}}</li>
+                <li>{{createdAt}}</li>
+                <li>{{width}} x {{height}}</li>
+              </ul>
+            </a>
+            <button class="deleteStack">Delete</button>
+          </li>
+        </script>
+
+        <script id="stackList" type="text/html">
+          <h4>You have {{amount}} stacks</h4>
+          <ul class="list">
+            {{#stacks}}
+              {{>stackItem}}
+            {{/stacks}}
+          </ul>
         </script>
 
         <!--[if lt IE 7]>

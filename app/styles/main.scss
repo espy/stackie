@@ -3,6 +3,12 @@ $iconWhiteSpritePath: "../images/glyphicons-halflings-white.png";
 
 @import 'sass-bootstrap/lib/bootstrap';
 
+.group:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
 body{
   background: #5E5E5E;
   &.start{
@@ -105,5 +111,30 @@ header{
   right: 0;
   z-index: 50;
   background: #FFF;
+}
+
+.stackList{
+  ul.list{
+    list-style: none;
+    margin: 0;
+    li{
+      a{
+        &:hover{
+          text-decoration: none;
+        }
+        img{
+          max-width: 100px;
+          float:left;
+          margin: 0 10px;
+        }
+        ul.stackAttributes{
+          list-style: none;
+          li{
+
+          }
+        }
+      }
+    }
+  }
 }
 

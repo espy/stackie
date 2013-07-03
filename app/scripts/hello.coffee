@@ -18,6 +18,7 @@
     routes = Davis(->
       @get "/", (req) ->
         console.log "start page"
+        stackie.stackList.init()
         stackie.dropZone.init()
         $.event.trigger('app:cleanup')
         $body.removeClass().addClass('start');
@@ -25,6 +26,7 @@
         console.log "show stack " + req.params["id"]
         stackie.image.init()
         stackie.chat.init()
+        stackie.stackList.init()
         $.event.trigger('app:cleanup')
         $body.removeClass().addClass('stack');
         stackie.image.showImage(req.params["id"])
@@ -36,11 +38,85 @@
 
   init: init
 
-@stackie.dropZone = do ->
-  $el = $('.dropZone')
+@stackie.stackList = do ->
+  $el = $('.stackList')
+  $list = $el.find('.list')
+  initialized = false
 
   init = ->
-    registerEvents()
+    unless initialized
+      initialized = true
+      registerEvents()
+      populateList()
+
+  registerEvents = ->
+    $el.on 'click', '.deleteStack', deleteStack
+    hoodie.store.on 'add:image', onStackAdded
+    hoodie.store.on 'remove:image', onStackRemoved
+    hoodie.store.on 'change:point', onPointChanged
+
+  populateList = ->
+    $.when(
+      hoodie.store.findAll('point')
+      hoodie.store.findAll('image')
+    ).then (points, stacks) ->
+      data =
+        stacks: []
+        baseUrl: hoodie.baseUrl
+        amount: stacks.length
+      stacks.reverse()
+      for stack in stacks
+        stack.pointAmount = _.where(points, {image: stack.id}).length
+        data.stacks.push stack
+      html = ich.stackList data
+      $el.append(html)
+
+  deleteStack = (event) ->
+    event.preventDefault()
+    id = $(event.target).closest('[data-id]').data('id')
+    # Remove all points belonging to the stack
+    hoodie.store.removeAll (point) ->
+      if point.type is "point" and point.image is id
+        # Remove messages belonging to each point
+        hoodie.store.removeAll (message) ->
+          if message.type is "message" and message.point is point.id
+            return true
+        return true
+    hoodie.store.remove 'image', id
+
+  onStackRemoved = (data) ->
+    $el.find('[data-id="'+data.id+'"]').remove()
+
+  onStackAdded = (data) ->
+    data.baseUrl = hoodie.baseUrl
+    html = ich.stackItem data
+    $list.prepend(html)
+
+  onPointChanged = (event, data) ->
+    console.log("onPointChanged: ");
+    $target = $el.find '[data-id="'+data.image+'"]'
+    console.log("target: ",$target);
+    $counter = $target.find '.pointAmount'
+    console.log("counter: ",$counter);
+    #debugger
+    switch event
+      when "add"
+        $counter.text(parseInt($counter.text(), 10)+1)
+      when "remove"
+        $counter.text(parseInt($counter.text(), 10)-1)
+      else
+        null
+
+  init: init
+
+@stackie.dropZone = do ->
+  $el = $('.dropZone')
+  initialized = false
+
+  init = ->
+    unless initialized
+      initialized = true
+      registerEvents()
 
   registerEvents = ->
     $el.on 'dragover', onDragOverDropZone
@@ -75,6 +151,8 @@
         properties.width = imageWidth
         properties.height = imageHeight
         properties._attachments = {}
+        # Cut away "data:image/jpeg;base64," from the data string, because
+        # CouchDB knows how to serve the object from the mime type
         properties._attachments[name] =
           content_type: mimeType,
           data: event.target.result.substr(13 + mimeType.length)
@@ -113,9 +191,12 @@
 @stackie.chat = do ->
   $el = $('.chatContainer')
   $document = $(document)
+  initialized = false
 
   init = ->
-    registerEvents()
+    unless initialized
+      initialized = true
+      registerEvents()
 
   registerEvents = ->
     $('.chatContainer').on 'click', '.sendMessage', onSendMessage
@@ -149,13 +230,16 @@
   $imageContainer = $('.imageContainer')
   $pointLayer = $('.pointLayer')
   $document = $(document)
+  initialized = false
 
   init = ->
-    registerEvents()
+    unless initialized
+      initialized = true
+      registerEvents()
 
   registerEvents = ->
     hoodie.store.on 'add:point', onNewPoint
-    $imageContainer.hammer().on "hold", onAddPoint
+    $imageContainer.hammer({release: true}).on "hold", onAddPoint
     $pointLayer.on "click", ".point", onPointClick
     $document.on('app:cleanup', cleanup)
 
